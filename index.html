@@ -981,11 +981,43 @@ function toggleMic() {
     isListening = false;
     document.getElementById('micBtn').classList.remove('listening');
     document.getElementById('micBtn').textContent = '🎤';
-    if (e.error !== 'no-speech') console.warn('Speech error:', e.error);
+    const msgs = {
+      'not-allowed': '🚫 Mic blocked — go to Chrome Site Settings → Microphone → Allow',
+      'no-speech':   '🔇 Nothing heard — tap mic and speak straight away',
+      'network':     '📡 Network error during speech recognition',
+      'audio-capture': '🎙️ No microphone found on this device',
+      'language-not-supported': '⚠️ Dutch not supported — switching to English recognition',
+    };
+    if (e.error === 'language-not-supported') {
+      recognition.lang = 'en-US';
+      showToast(msgs[e.error]);
+    } else if (msgs[e.error]) {
+      showToast(msgs[e.error]);
+    }
   };
 
   stopSpeech();
-  try { recognition.start(); } catch(e) { console.warn('Could not start recognition:', e); }
+  try { recognition.start(); } catch(e) {
+    isListening = false;
+    showToast('Could not start mic: ' + e.message);
+  }
+}
+
+function showToast(msg) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = `position:fixed;bottom:90px;left:50%;transform:translateX(-50%);
+      background:#1c1c1e;color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;
+      z-index:999;max-width:90vw;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,0.3);
+      transition:opacity 0.3s;`;
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.opacity = '1';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.style.opacity = '0'; }, 4000);
 }
 
 // ══ UTILS ══
